@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 이 파일의 경로를 config.xml에 명시해야 한다. -->
+
+<!-- 이 XML의 구조대로 구현될 클래스의 이름 -->
+<mapper namespace="StudentJoinMapper">
+
+	<!-- Beans 클래스의 객체이름(id)과 클래스이름(type)을 명시한다. -->
+	<resultMap id="student_department" type="study.spring.hellospring.model.StudentDepartment">
+		<!-- Beans의 멤버변수(property)이름과 대상 테이블의 컬럼(column)을 연결한다. -->
+		
+		<result property="studno" column="studno"/>
+		<result property="name" column="name"/>
+		<result property="userid" column="userid"/>
+		<result property="grade" column="grade"/>
+		<result property="idnum" column="idnum"/>
+		<result property="birthdate" column="birthdate"/>
+		<result property="tel" column="tel"/>
+		<result property="height" column="height"/>
+		<result property="weight" column="weight"/>
+		<result property="deptno" column="deptno"/>
+		<result property="profno" column="profno"/>
+		<result property="dname" column="dname"/>
+		<result property="pname" column="pname"/>
+	</resultMap>
+
+	<!-- 학생+학과+교수 테이블을 조인하여 목록조회 -->
+	<select id="selectStudentJoinList" 
+		parameterType="study.spring.hellospring.model.StudentDepartment"
+	 	resultMap="student_department">
+	 	SELECT * FROM (
+			SELECT ROWNUM AS RNUM, tbl.* FROM ( 
+		SELECT  studno, student.name, student.userid, grade, idnum, 
+			    TO_CHAR(birthdate, 'YYYY-MM-DD') AS birthdate, 
+			    tel, height, weight, student.deptno as deptno, department.dname as dname, 
+			    student.profno as profno, professor.name as pname
+		FROM    student    INNER JOIN department ON student.deptno=department.deptno
+						LEFT OUTER JOIN professor ON student.profno=professor.profno		
+		<where>
+			<if test="name != null and name != ''">
+				name LIKE '%'||#{name}||'%'
+			</if>
+		</where>
+		
+		ORDER   BY studno DESC
+		) tbl WHERE ROWNUM &lt;= #{listCount}+#{limitStart}
+		) WHERE RNUM &gt; #{limitStart}
+	</select>
+	
+	<!-- 학생+학과 테이블을 조인하여 상세조회 -->
+	<select id="selectStudentJoinItem" 
+		parameterType="study.spring.hellospring.model.StudentDepartment"
+		resultMap="student_department">
+		SELECT  studno, student.name, student.userid, grade, idnum, 
+			    TO_CHAR(birthdate, 'YYYY-MM-DD') AS birthdate, 
+			    tel, height, weight, student.deptno as deptno, department.dname as dname,
+			    student.profno as profno, professor.name as pname
+		FROM    student    INNER JOIN department ON student.deptno=department.deptno
+							LEFT OUTER JOIN professor ON student.profno=professor.profno
+		WHERE   studno=#{studno}
+	</select>
+	
+	
+	
+	<!-- 조인 결과에 대한 전체 데이터 수 얻기 -->
+	<select id="selectStudentCount"
+		parameterType="study.spring.hellospring.model.StudentDepartment"
+		resultType="int">
+		SELECT count(studno)
+		FROM student INNER JOIN department ON student.deptno=department.deptno
+		<where>
+			<if test="name != null and name != ''">
+				name LIKE concat('%', #{name}, '%')
+			</if>
+		</where>
+	</select>
+</mapper>
+
+
